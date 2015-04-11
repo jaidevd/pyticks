@@ -14,23 +14,14 @@ import os.path as op
 import unittest
 import responses
 import pyticks
-import keyring
 import ast
 
 
 class TestPyTicks(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        keyring.set_password("pyticks_tester", "jaidevd", "foobar")
-
-    @classmethod
-    def tearDownClass(cls):
-        keyring.delete_password("pyticks_tester", "jaidevd")
-
     def setUp(self):
         self.maxDiff = None
-        self.engine = pyticks.PyTicks(service_name="pyticks_tester")
+        self.engine = pyticks.PyTicks("jaidevd", "foobar")
         self.url = pyticks.URL.format(username="jaidevd", repo="pyticks")
         self.issue1_body = json.dumps(dict(
                       body='this is the body of the dummy issue.',

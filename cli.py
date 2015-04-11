@@ -9,10 +9,12 @@
 """pyticks
 
 Usage:
-    pyticks [--force]
+    pyticks [--username=<USERNAME>] [--password=<PASSWORD>] [--force]
 
 Options:
-    -f --force      Force updating issues by searching the entire repo.
+    --force                    Force parse all tracked files for issues.
+    -u --username=<USERNAME>   GitHub username
+    -p --password=<PASSWORD>   GitHub password
 
 """
 
@@ -22,5 +24,7 @@ import pyticks
 
 def main():
     arguments = docopt(__doc__, version="pyticks v0.0.1")
-    if not arguments.get("--force"):
-        pyticks.main()
+    username = arguments.get("--username")
+    password = arguments.get("--password")
+    if username and password:
+        pyticks.main(username, password)

@@ -15,7 +15,6 @@ import subprocess
 import os.path as op
 
 from git import Repo
-import keyring
 from requests import session
 from requests.auth import HTTPBasicAuth
 
@@ -32,28 +31,14 @@ class PyTicks(object):
     Most of what this module does should be accessible through this class. It
     provides a method `run`, which does all the heavy lifting. '''
 
-    def __init__(self, service_name='pyticks'):
+    def __init__(self, username, password, service_name='pyticks'):
         self.working_dir = self._get_toplevel_directory()
         self.repo = Repo(self.working_dir)
-        self.username = self._get_username()
-        self.password = keyring.get_password(service_name, self.username)
+        self.username = username
+        self.password = password
         self.auth = HTTPBasicAuth(self.username, self.password)
         self.files = []
         self.find_files()
-
-    def _get_username(self):
-        '''Get the GitHub username
-
-        :return: username
-        :rtype: Str
-        '''
-        for remote in self.repo.remotes:
-            if remote.name == 'origin':
-                break
-        url = remote.url
-        for prefix in PREFIXES:
-            if url.startswith(prefix):
-                return url.replace(prefix, '').split('/')[0]
 
     def _get_toplevel_directory(self):
         '''Get the toplevel working directory for the current git repo.
@@ -148,8 +133,8 @@ class PyTicks(object):
                 return rname
 
 
-def main():
-    engine = PyTicks()
+def main(username, password):
+    engine = PyTicks(username, password)
     engine.run()
 
 
