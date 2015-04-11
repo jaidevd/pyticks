@@ -14,20 +14,30 @@ import os.path as op
 import unittest
 import responses
 import pyticks
+import keyring
+import ast
 
 
 class TestPyTicks(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        keyring.set_password("pyticks_tester", "jaidevd", "foobar")
+
+    @classmethod
+    def tearDownClass(cls):
+        keyring.delete_password("pyticks_tester", "jaidevd")
+
     def setUp(self):
         self.maxDiff = None
-        self.engine = pyticks.PyTicks()
+        self.engine = pyticks.PyTicks(service_name="pyticks_tester")
         self.url = pyticks.URL.format(username="jaidevd", repo="pyticks")
         self.issue1_body = json.dumps(dict(
-                      body="this is the body of the dummy issue.",
-                      title="this is a dummy issue"))
+                      body='this is the body of the dummy issue.',
+                      title='this is a dummy issue'))
         self.issue2_body = json.dumps(dict(
-                      body="this is the body of the second issue.",
-                      title="this is another issue"))
+                      body='this is the body of the second issue.',
+                      title='this is another issue'))
 
     def test_get_toplevel_dir(self):
         """Check if the toplevel directory is detected correctly."""
@@ -35,8 +45,8 @@ class TestPyTicks(unittest.TestCase):
         self.assertEqual(self.engine.working_dir, ideal)
 
     def test_find_files(self):
-        ideal = ['tests.py', 'pyticks.py', 'cli.py', 'README.md', '.gitignore',
-                 'requirements.txt', 'setup.py', 'LICENSE']
+        ideal = ["tests.py", "pyticks.py", "cli.py", "README.md", ".gitignore",
+                 "requirements.txt", "setup.py", "LICENSE"]
         ideal = [op.join(op.abspath(op.dirname(__file__)), f) for f in ideal]
         self.assertItemsEqual(ideal, self.engine.files)
 
@@ -51,8 +61,8 @@ class TestPyTicks(unittest.TestCase):
         ideal = [json.loads(self.issue1_body), json.loads(self.issue2_body)]
         for i in range(2):
             issue = ideal[i]
-            self.assertEqual(issue['title'], fixmes[i]['title'])
-            self.assertEqual(issue['body'], fixmes[i]['body'])
+            self.assertEqual(issue["title"], fixmes[i]["title"])
+            self.assertEqual(issue["body"], fixmes[i]["body"])
 
     @responses.activate
     def test_report_issue(self):
@@ -60,10 +70,10 @@ class TestPyTicks(unittest.TestCase):
                       body=self.issue1_body, content_type="application/json")
         resps = self.engine.run()
         self.assertEqual(len(resps), 2)
-        for resp in resps:
-            self.assertEqual(resp.calls[0].url, self.url)
-        self.assertEqual(resps[0].response.text, self.issue1_body)
-        self.assertEqual(resps[1].response.text, self.issue2_body)
+        self.assertEqual(responses.calls[0].request.url, self.url)
+        self.assertEqual(responses.calls[1].request.url, self.url)
+        self.assertEqual(ast.literal_eval(resps[0].text),
+                         ast.literal_eval(self.issue1_body))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
