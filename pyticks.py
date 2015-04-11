@@ -27,6 +27,11 @@ PREFIXES = ["git@github.com:", "https://github.com/",
 
 class PyTicks(object):
 
+    """The main class of the pyticks module.
+
+    Most of what this module does should be accessible through this class. It
+    provides a method `run`, which does all the heavy lifting. """
+
     def __init__(self):
         self.working_dir = self._get_toplevel_directory()
         self.repo = Repo(self.working_dir)
@@ -37,6 +42,11 @@ class PyTicks(object):
         self.find_files()
 
     def _get_username(self):
+        """Get the GitHub username
+
+        :return: username
+        :rtype: Str
+        """
         for remote in self.repo.remotes:
             if remote.name == "origin":
                 break
@@ -46,20 +56,35 @@ class PyTicks(object):
                 return url.replace(prefix, "").split('/')[0]
 
     def _get_toplevel_directory(self):
+        """Get the toplevel working directory for the current git repo.
+
+        :rtype: Str
+        """
         cmd = "git rev-parse --show-toplevel"
         return subprocess.check_output(cmd.split()).rstrip()
 
     def find_files(self):
+        """Find all the tracked files. Equivalent to git ls-files."""
         for item in self.repo.tree().traverse():
             self.files.append(op.join(self.repo.working_dir, item.path))
 
     def report_issue(self, payload):
+        """Post an issue to GitHub.
+
+        :param payload: Dictionary containing payload to deliver through the
+        GitHub API.
+        :type payload: Dict
+        :return: HTTP response
+        :rtype: requests.models.Response
+        """
         url = URL.format(username=self.username,
                          repo=self._get_remote_repo_name())
         s = session()
         return s.post(url, data=json.dumps(payload), auth=self.auth)
 
     def run(self):
+        """Parse all tracked files, get FIXMEs, create issues on GitHub."""
+
         for filepath in self.files:
             if op.isfile(filepath):
                 fixmes = self._find_fixme(filepath)
@@ -68,6 +93,13 @@ class PyTicks(object):
                         self.report_issue(issue)
 
     def _find_fixme(self, filepath):
+        """Find all comments marked FIXME in the file at `filepath`.
+
+        :param filepath: path to file which is to be parsed for FIXMEs
+        :type filepath: Str
+        :return: List of FIXME comments
+        :rtype: list
+        """
         with open(filepath, "r") as f:
             lines = [line.rstrip() for line in f.readlines()]
         anchors = []
@@ -97,6 +129,11 @@ class PyTicks(object):
         return fixmes
 
     def _get_remote_repo_name(self):
+        """Get the name of the remote repository by parsing the remote url.
+
+        :return: Name of the remote url.
+        :rtype: str
+        """
         for remote in self.repo.remotes:
             if remote.name == "origin":
                 break
