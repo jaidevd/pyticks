@@ -14,6 +14,7 @@ import os.path as op
 import unittest
 import responses
 import pyticks
+import subprocess
 import ast
 
 
@@ -36,8 +37,10 @@ class TestPyTicks(unittest.TestCase):
         self.assertEqual(self.engine.working_dir, ideal)
 
     def test_find_files(self):
-        ideal = ["tests.py", "pyticks.py", "cli.py", "README.md", ".gitignore",
-                 "requirements.txt", "setup.py", "LICENSE"]
+        ideal = subprocess.check_output("git ls-files".split(),
+                                        cwd=op.abspath(op.dirname(__file__)))
+        ideal = ideal.splitlines()
+        ideal = [op.basename(f) for f in ideal]
         ideal = [op.join(op.abspath(op.dirname(__file__)), f) for f in ideal]
         self.assertItemsEqual(ideal, self.engine.files)
 

@@ -1,6 +1,8 @@
 gitpython
 requests
 docopt
+# Testing
 coverage
 coveralls
 nose
+responses
