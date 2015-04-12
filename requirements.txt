@@ -1,3 +1,6 @@
 gitpython
 requests
 docopt
+coverage
+coveralls
+nose

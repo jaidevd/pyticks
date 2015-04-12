@@ -74,7 +74,6 @@ class PyTicks(object):
             if op.isfile(filepath):
                 fixmes = self._find_fixme(filepath)
                 if len(fixmes) > 0:
-                    print 'fixmes found'
                     responses = []
                     for issue in fixmes:
                         responses.append(self.report_issue(issue))
