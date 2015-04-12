@@ -3,13 +3,8 @@ omit =
     */python?.?/*
     */lib-python/?.?/*.py
     */unittest2/*
-    */dist-packages/pandas/*
-    */dist-packages/numpy/*
     */dist-packages/nose/*
-    */dist-packages/pyyaml/*
-    */dist-packages/traits/*
     */dist-packages/docopt/*
-    */pgmpy/extern/*
 
 exclude_lines =
     # Have to re-enable the standard pragma
