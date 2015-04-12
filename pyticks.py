@@ -20,7 +20,7 @@ from requests.auth import HTTPBasicAuth
 
 
 URL = 'https://api.github.com/repos/{username}/{repo}/issues'
-PREFIXES = ['git@github.com:', 'https://github.com/',
+PREFIXES = ['git@github.com:', 'https://github.com/', 'git://github.com/',
             'https://www.github.com/']
 
 
