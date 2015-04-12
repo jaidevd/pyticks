@@ -9,4 +9,4 @@ install:
 # command to run tests
 script: nosetests --with-coverage --cover-package=pyticks --no-byte-compile
 after_success:
-  - coveralls
+  coveralls
