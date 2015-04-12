@@ -26,5 +26,4 @@ def main():
     arguments = docopt(__doc__, version="pyticks v0.0.1")
     username = arguments.get("--username")
     password = arguments.get("--password")
-    if username and password:
-        pyticks.main(username, password)
+    pyticks.main((username, password))

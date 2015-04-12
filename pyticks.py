@@ -31,14 +31,27 @@ class PyTicks(object):
     Most of what this module does should be accessible through this class. It
     provides a method `run`, which does all the heavy lifting. '''
 
-    def __init__(self, username, password, service_name='pyticks'):
+    def __init__(self, auth=None):
         self.working_dir = self._get_toplevel_directory()
         self.repo = Repo(self.working_dir)
-        self.username = username
-        self.password = password
+        if (auth is not None) and (None not in auth):
+            self.username, self.password = auth
+        else:
+            self.username, self.password = self.get_netrc_auth()
         self.auth = HTTPBasicAuth(self.username, self.password)
         self.files = []
         self.find_files()
+
+    def get_netrc_auth(self):
+        import os
+        import netrc
+        if os.environ.get("PYTICKS_NETRC", False):
+            netrc_path = os.environ['PYTICKS_NETRC']
+        else:
+            netrc_path = op.join(op.expanduser("~"), ".netrc")
+        creds = netrc.netrc(netrc_path)
+        username, _, password = creds.authenticators('github')
+        return username, password
 
     def _get_toplevel_directory(self):
         '''Get the toplevel working directory for the current git repo.
@@ -132,8 +145,8 @@ class PyTicks(object):
                 return rname
 
 
-def main(username, password):
-    engine = PyTicks(username, password)
+def main(auth):
+    engine = PyTicks(auth)
     engine.run()
 
 

@@ -10,6 +10,7 @@
 
 
 import json
+import os
 import os.path as op
 import unittest
 import responses
@@ -21,8 +22,11 @@ import ast
 class TestPyTicks(unittest.TestCase):
 
     def setUp(self):
+        test_netrc_path = op.join(op.abspath(op.dirname(__file__)), "testdata",
+                                  "sample.netrc")
+        os.environ['PYTICKS_NETRC'] = test_netrc_path
         self.maxDiff = None
-        self.engine = pyticks.PyTicks("jaidevd", "foobar")
+        self.engine = pyticks.PyTicks()
         self.url = pyticks.URL.format(username="jaidevd", repo="pyticks")
         self.issue1_body = json.dumps(dict(
                       body='this is the body of the dummy issue.',
@@ -30,6 +34,9 @@ class TestPyTicks(unittest.TestCase):
         self.issue2_body = json.dumps(dict(
                       body='this is the body of the second issue.',
                       title='this is another issue'))
+
+    def tearDown(self):
+        del os.environ['PYTICKS_NETRC']
 
     def test_get_toplevel_dir(self):
         """Check if the toplevel directory is detected correctly."""
@@ -57,6 +64,12 @@ class TestPyTicks(unittest.TestCase):
             issue = ideal[i]
             self.assertEqual(issue["title"], fixmes[i]["title"])
             self.assertEqual(issue["body"], fixmes[i]["body"])
+
+    def test_auth(self):
+        """Test if correct credentials are found in netrc."""
+        username, password = self.engine.get_netrc_auth()
+        self.assertEqual(username, "jaidevd")
+        self.assertEqual(password, "password")
 
     @responses.activate
     def test_report_issue(self):
