@@ -39,8 +39,14 @@ class PyTicks(object):
         else:
             self.username, self.password = self.get_netrc_auth()
         self.auth = HTTPBasicAuth(self.username, self.password)
-        self.files = []
         self.find_files()
+
+    def get_unpushed_commits(self):
+        branch = self.repo.active_branch.name
+        cmd = "origin/{0}..{1}".format(branch)
+        log_info = self.repo.git.log(cmd).splitlines()
+        commits = [line.split()[1] for line in log_info if "commit" in line]
+        return commits
 
     def get_netrc_auth(self):
         import os
@@ -63,8 +69,8 @@ class PyTicks(object):
 
     def find_files(self):
         '''Find all the tracked files. Equivalent to git ls-files.'''
-        for item in self.repo.tree().traverse():
-            self.files.append(op.join(self.repo.working_dir, item.path))
+        files = self.repo.git.ls_files().splitlines()
+        self.files = [op.join(self.repo.working_dir, f) for f in files]
 
     def report_issue(self, payload):
         '''Post an issue to GitHub.

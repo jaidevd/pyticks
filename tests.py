@@ -47,7 +47,6 @@ class TestPyTicks(unittest.TestCase):
         ideal = subprocess.check_output("git ls-files".split(),
                                         cwd=op.abspath(op.dirname(__file__)))
         ideal = ideal.splitlines()
-        ideal = [op.basename(f) for f in ideal]
         ideal = [op.join(op.abspath(op.dirname(__file__)), f) for f in ideal]
         self.assertItemsEqual(ideal, self.engine.files)
 
