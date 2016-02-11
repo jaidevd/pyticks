@@ -10,6 +10,32 @@
 PyTicks: automatically turn TODOs and FIXMEs into GitHub issues.
 '''
 
+# FIXME: Make it smarter
+#    - the script should only look for issues in commits that don't exist in the
+#    remote
+#    - users should be warned if an identical issue already exists (same user,
+#        same title)
+#
+# FIXME: Make it fully configurable
+#    - The user should be able to specify what prefixes to use for issues, not
+#    just the string "FIXME" but arbitrary strings.
+#    - The user should be able to specify git branches in which issues are
+#        searched.
+#    - The user should be able to assign issues by using simple syntax in the
+#        code. Eg, by using trailing comments like `#assignee: username`. Same
+#        with milestones.
+#
+# FIXME: Multi-language support:
+#    - Depending on the extensions of the file, the script should be able to
+#        pick up the right comment characters/strings.
+
+# FIXME: Add caching support
+# Recently filed issues should be cached somewhere, so that PyTicks can raise a
+# warning saying, for example: "This issue has already been filed, ignoring. Please
+# remove the comments if it is closed. Clear the cache if you want to re-file
+# it."
+
+
 import json
 import subprocess
 import os.path as op
