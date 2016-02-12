@@ -10,32 +10,6 @@
 PyTicks: automatically turn TODOs and FIXMEs into GitHub issues.
 '''
 
-# FIXME: Make it smarter
-#    - the script should only look for issues in commits that don't exist in the
-#    remote
-#    - users should be warned if an identical issue already exists (same user,
-#        same title)
-#
-# FIXME: Make it fully configurable
-#    - The user should be able to specify what prefixes to use for issues, not
-#    just the string "FIXME" but arbitrary strings.
-#    - The user should be able to specify git branches in which issues are
-#        searched.
-#    - The user should be able to assign issues by using simple syntax in the
-#        code. Eg, by using trailing comments like `#assignee: username`. Same
-#        with milestones.
-#
-# FIXME: Multi-language support:
-#    - Depending on the extensions of the file, the script should be able to
-#        pick up the right comment characters/strings.
-
-# FIXME: Add caching support
-# Recently filed issues should be cached somewhere, so that PyTicks can raise a
-# warning saying, for example: "This issue has already been filed, ignoring. Please
-# remove the comments if it is closed. Clear the cache if you want to re-file
-# it."
-
-
 import json
 import subprocess
 import os.path as op
@@ -50,6 +24,14 @@ PREFIXES = ['git@github.com:', 'https://github.com/', 'git://github.com/',
             'https://www.github.com/']
 
 
+def locate_config_file(tld=None):
+    """Locate the config file used by pyticks."""
+    if tld is None:
+        tld = PyTicks._get_toplevel_directory()
+    if op.exists(op.join(tld, ".pyticksrc")):
+        return op.abspath(op.join(tld, ".pyticksrc"))
+
+
 class PyTicks(object):
 
     '''The main class of the pyticks module.
@@ -57,15 +39,17 @@ class PyTicks(object):
     Most of what this module does should be accessible through this class. It
     provides a method `run`, which does all the heavy lifting. '''
 
-    def __init__(self, auth=None):
-        self.working_dir = self._get_toplevel_directory()
+    def __init__(self, auth=None, working_dir=None):
+        if working_dir is None:
+            self.working_dir = self._get_toplevel_directory()
+        else:
+            self.working_dir = working_dir
         self.repo = Repo(self.working_dir)
         if (auth is not None) and (None not in auth):
             self.username, self.password = auth
         else:
             self.username, self.password = self.get_netrc_auth()
         self.auth = HTTPBasicAuth(self.username, self.password)
-        self.find_files()
 
     def get_unpushed_commits(self):
         branch = self.repo.active_branch.name
@@ -85,7 +69,8 @@ class PyTicks(object):
         username, _, password = creds.authenticators('github')
         return username, password
 
-    def _get_toplevel_directory(self):
+    @staticmethod
+    def _get_toplevel_directory():
         '''Get the toplevel working directory for the current git repo.
 
         :rtype: Str
@@ -93,10 +78,11 @@ class PyTicks(object):
         cmd = 'git rev-parse --show-toplevel'
         return subprocess.check_output(cmd.split()).rstrip()
 
-    def find_files(self):
+    @property
+    def files(self):
         '''Find all the tracked files. Equivalent to git ls-files.'''
         files = self.repo.git.ls_files().splitlines()
-        self.files = [op.join(self.repo.working_dir, f) for f in files]
+        return [op.join(self.repo.working_dir, f) for f in files if f.endswith(".py")]
 
     def report_issue(self, payload):
         '''Post an issue to GitHub.
@@ -124,7 +110,8 @@ class PyTicks(object):
                         responses.append(self.report_issue(issue))
                     return responses
 
-    def _find_fixme(self, filepath):
+    @staticmethod
+    def _find_fixme(filepath):
         '''Find all comments marked FIXME in the file at `filepath`.
 
         :param filepath: path to file which is to be parsed for FIXMEs
@@ -179,7 +166,7 @@ class PyTicks(object):
 
 def main(auth):
     engine = PyTicks(auth)
-    engine.run()
+    print engine.run()
 
 
 if __name__ == '__main__':

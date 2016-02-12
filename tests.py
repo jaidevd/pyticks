@@ -17,6 +17,27 @@ import responses
 import pyticks
 import subprocess
 import ast
+from git import Repo
+import tempfile
+import shutil
+
+
+class TestConfig(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tld = tempfile.mkdtemp()
+        cls.repo = Repo.init(cls.tld)
+        open(op.join(cls.tld, ".pyticksrc"), "w").close()
+
+    def test_get_config_file(self):
+        ideal = op.join(self.tld, ".pyticksrc")
+        actual = pyticks.locate_config_file(self.tld)
+        self.assertEqual(ideal, actual)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tld)
 
 
 class TestPyTicks(unittest.TestCase):
@@ -48,6 +69,7 @@ class TestPyTicks(unittest.TestCase):
                                         cwd=op.abspath(op.dirname(__file__)))
         ideal = ideal.splitlines()
         ideal = [op.join(op.abspath(op.dirname(__file__)), f) for f in ideal]
+        ideal = [f for f in ideal if f.endswith(".py")]
         self.assertItemsEqual(ideal, self.engine.files)
 
     def test_find_fixme(self):
