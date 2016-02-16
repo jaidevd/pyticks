@@ -11,6 +11,7 @@ PyTicks: automatically turn TODOs and FIXMEs into GitHub issues.
 '''
 
 import json
+from ConfigParser import RawConfigParser, NoOptionError
 import subprocess
 import os.path as op
 
@@ -19,7 +20,7 @@ from requests import session
 from requests.auth import HTTPBasicAuth
 
 
-URL = 'https://api.github.com/repos/{username}/{repo}/issues'
+URL = 'https://api.github.com/repos/{orgname}/{repo}/issues'
 PREFIXES = ['git@github.com:', 'https://github.com/', 'git://github.com/',
             'https://www.github.com/']
 
@@ -30,6 +31,30 @@ def locate_config_file(tld=None):
         tld = PyTicks._get_toplevel_directory()
     if op.exists(op.join(tld, ".pyticksrc")):
         return op.abspath(op.join(tld, ".pyticksrc"))
+
+
+class Configuration(object):
+
+    def __init__(self, working_dir):
+        self.working_dir = working_dir
+        config_fpath = locate_config_file(self.working_dir)
+        self.parser = RawConfigParser()
+        self.parser.read(config_fpath)
+
+    @property
+    def cache_location(self):
+        cpath = self.parser.get("main", "cache_location")
+        if not op.exists(cpath):
+            open(cpath, "w").close()
+        return cpath
+
+    @property
+    def default_remote(self):
+        try:
+            remote = self.parser.get("main", "default_remote")
+            return remote
+        except NoOptionError:
+            return "origin"
 
 
 class PyTicks(object):
@@ -50,6 +75,25 @@ class PyTicks(object):
         else:
             self.username, self.password = self.get_netrc_auth()
         self.auth = HTTPBasicAuth(self.username, self.password)
+        self.config = Configuration(self.working_dir)
+        self.cache = self._get_cache()
+
+    def _get_cache(self):
+        with open(self.config.cache_location, "r") as fin:
+            cache = json.load(fin)
+        return cache
+
+    def encache(self, payload):
+        issues = self.cache.get(self._get_remote_repo_name(), [])
+        if len(issues) == 0:
+            self.cache[self._get_remote_repo_name()] = [payload]
+        else:
+            issues.append(payload)
+        with open(self.config.cache_location, "w") as fout:
+            json.dump(self.cache, fout)
+
+    def clear_cache(self):
+        pass
 
     def get_unpushed_commits(self):
         branch = self.repo.active_branch.name
@@ -68,6 +112,15 @@ class PyTicks(object):
         creds = netrc.netrc(netrc_path)
         username, _, password = creds.authenticators('github')
         return username, password
+
+    def _get_orgname(self):
+        for remote in self.repo.remotes:
+            if remote.name == self.config.default_remote:
+                break
+        url = remote.url
+        for prefix in PREFIXES:
+            if url.startswith(prefix):
+                return url.replace(prefix, "").split(r'/')[0]
 
     @staticmethod
     def _get_toplevel_directory():
@@ -93,22 +146,26 @@ class PyTicks(object):
         :return: HTTP response
         :rtype: requests.models.Response
         '''
-        url = URL.format(username=self.username,
-                         repo=self._get_remote_repo_name())
-        s = session()
-        return s.post(url, data=json.dumps(payload), auth=self.auth)
+        if payload not in self.cache.get(self._get_remote_repo_name(), []):
+            url = URL.format(orgname=self._get_orgname(),
+                            repo=self._get_remote_repo_name())
+            s = session()
+            response = s.post(url, data=json.dumps(payload), auth=self.auth)
+            if response.status_code == 201:
+                self.encache(payload)
+        else:
+            print "Issue already filed. Skipping."
 
     def run(self):
         '''Parse all tracked files, get FIXMEs, create issues on GitHub.'''
-
+        responses = []
         for filepath in self.files:
             if op.isfile(filepath):
                 fixmes = self._find_fixme(filepath)
                 if len(fixmes) > 0:
-                    responses = []
                     for issue in fixmes:
                         responses.append(self.report_issue(issue))
-                    return responses
+        return responses
 
     @staticmethod
     def _find_fixme(filepath):
@@ -154,12 +211,12 @@ class PyTicks(object):
         :rtype: str
         '''
         for remote in self.repo.remotes:
-            if remote.name == 'origin':
+            if remote.name == self.config.default_remote:
                 break
         url = remote.url
         for prefix in PREFIXES:
             if url.startswith(prefix):
-                rname = url.lstrip(prefix + self.username).rstrip(
+                rname = url.lstrip(prefix + self._get_orgname()).rstrip(
                                                             '.git').lstrip('/')
                 return rname
 

@@ -28,7 +28,10 @@ class TestConfig(unittest.TestCase):
     def setUpClass(cls):
         cls.tld = tempfile.mkdtemp()
         cls.repo = Repo.init(cls.tld)
-        open(op.join(cls.tld, ".pyticksrc"), "w").close()
+        cls.testdata = op.join(op.abspath(op.dirname(__file__)), "testdata")
+        org_location = op.join(cls.testdata, ".pyticksrc")
+        new_location = op.join(cls.tld, ".pyticksrc")
+        shutil.copy(org_location, new_location)
 
     def test_get_config_file(self):
         ideal = op.join(self.tld, ".pyticksrc")
@@ -55,9 +58,16 @@ class TestPyTicks(unittest.TestCase):
         self.issue2_body = json.dumps(dict(
                       body='this is the body of the second issue.',
                       title='this is another issue'))
+        self.cache_location = op.join(op.expanduser("~"), ".pyticks", "cache.json")
 
     def tearDown(self):
         del os.environ['PYTICKS_NETRC']
+
+    def _backup_cache(self, undo=False):
+        if not undo:
+            shutil.copy(self.cache_location, self.cache_location + ".1")
+        else:
+            shutil.move(self.cache_location + ".1", self.cache_location)
 
     def test_get_toplevel_dir(self):
         """Check if the toplevel directory is detected correctly."""
@@ -91,6 +101,37 @@ class TestPyTicks(unittest.TestCase):
         username, password = self.engine.get_netrc_auth()
         self.assertEqual(username, "jaidevd")
         self.assertEqual(password, "password")
+
+    def test_get_cache(self):
+        """Check if the correct location of the cache is returned."""
+        actual = self.engine.get_cache()
+        self.assertEqual(self.cache_location, actual)
+
+    def test_clear_cache(self):
+        self.engine.encache(self.issue1_body)
+        self.engine.encache(self.issue1_body)
+        self._backup_cache()
+        ideal = op.join(os.expanduser("~"), ".pyticks", "cache.json")
+        try:
+            self.engine.clear_cache()
+            with open(ideal, "r") as fin:
+                self.assertEqual(fin.read().rstrip(), '{}')
+        finally:
+            self._backup_cache(undo=True)
+
+    @responses.activate
+    def test_cache(self):
+        responses.add(responses.POST, self.url, status=201,
+                      body=self.issue1_body, content_type="application/json")
+        self.engine.run()
+        cache = self.engine.get_cache()
+        try:
+            self.assertIn("pyticks", cache)
+            issues = cache['pyticks']
+            self.assertIn(self.issue1_body, issues)
+            self.assertIn(self.issue2_body, issues)
+        finally:
+            self.engine.clear_cache()
 
     @responses.activate
     def test_report_issue(self):
