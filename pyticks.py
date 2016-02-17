@@ -34,6 +34,7 @@ def locate_config_file(tld=None):
 
 
 class Configuration(object):
+    """Configuration class containing miscellaneous info used by Pyticks."""
 
     def __init__(self, working_dir):
         self.working_dir = working_dir
@@ -44,6 +45,7 @@ class Configuration(object):
 
     @property
     def cache_location(self):
+        """Get the path to the cache file used by Pyticks to store issues."""
         try:
             cpath = self.parser.get("main", "cache_location")
         except NoSectionError:
@@ -54,6 +56,8 @@ class Configuration(object):
 
     @property
     def default_remote(self):
+        """Get the default remote out of all the remotes listed in git.
+        It is on this remote that pyticks will attempt to create issues."""
         try:
             remote = self.parser.get("main", "default_remote")
             return remote
@@ -83,6 +87,7 @@ class PyTicks(object):
         self.cache = self._get_cache()
 
     def _get_cache(self):
+        """Get the cache as a dictionary."""
         if self.config.cache_location is not None:
             with open(self.config.cache_location, "r") as fin:
                 cache = json.load(fin)
@@ -90,6 +95,7 @@ class PyTicks(object):
         return {}
 
     def encache(self, payload):
+        """Add the payload of the current issue request to the cache."""
         issues = self.cache.get(self._get_remote_repo_name(), [])
         if len(issues) == 0:
             self.cache[self._get_remote_repo_name()] = [payload]
@@ -99,16 +105,11 @@ class PyTicks(object):
             json.dump(self.cache, fout)
 
     def clear_cache(self):
-        pass
-
-    def get_unpushed_commits(self):
-        branch = self.repo.active_branch.name
-        cmd = "origin/{0}..{1}".format(branch)
-        log_info = self.repo.git.log(cmd).splitlines()
-        commits = [line.split()[1] for line in log_info if "commit" in line]
-        return commits
+        with open(self.config.cache_location, "w") as fin:
+            json.dump({}, fin)
 
     def get_netrc_auth(self):
+        """Get the authentication credentials from the netrc file."""
         import os
         import netrc
         if os.environ.get("PYTICKS_NETRC", False):
@@ -120,6 +121,8 @@ class PyTicks(object):
         return username, password
 
     def _get_orgname(self):
+        """Get the name of the GitHub organization or the user who owns the
+        repo on which the issue is to be created."""
         for remote in self.repo.remotes:
             if remote.name == self.config.default_remote:
                 break
@@ -139,7 +142,7 @@ class PyTicks(object):
 
     @property
     def files(self):
-        '''Find all the tracked files. Equivalent to git ls-files.'''
+        '''Find all the *.py tracked files. Equivalent to git ls-files.'''
         files = self.repo.git.ls_files().splitlines()
         return [op.join(self.repo.working_dir, f) for f in files if f.endswith(".py")]
 
@@ -159,6 +162,7 @@ class PyTicks(object):
             response = s.post(url, data=json.dumps(payload), auth=self.auth)
             if response.status_code == 201:
                 self.encache(payload)
+            return response
         else:
             print "Issue already filed. Skipping."
 
@@ -222,8 +226,8 @@ class PyTicks(object):
         url = remote.url
         for prefix in PREFIXES:
             if url.startswith(prefix):
-                rname = url.lstrip(prefix + self._get_orgname()).rstrip(
-                                                            '.git').lstrip('/')
+                rname = url.replace(prefix + self._get_orgname() + '/',
+                                    '').rstrip('.git').lstrip('/')
                 return rname
 
 
