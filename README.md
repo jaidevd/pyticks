@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/jaidevd/pyticks.svg?branch=master)](https://travis-ci.org/jaidevd/pyticks)
+[![Coverage Status](https://coveralls.io/repos/github/jaidevd/pyticks/badge.svg?branch=master)](https://coveralls.io/github/jaidevd/pyticks?branch=master)
+
 # pyticks
 Turn all the FIXME and TODO comments in your code to GitHub issues.
 
