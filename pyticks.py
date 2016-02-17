@@ -11,7 +11,7 @@ PyTicks: automatically turn TODOs and FIXMEs into GitHub issues.
 '''
 
 import json
-from ConfigParser import RawConfigParser, NoOptionError
+from ConfigParser import RawConfigParser, NoOptionError, NoSectionError
 import subprocess
 import os.path as op
 
@@ -39,11 +39,15 @@ class Configuration(object):
         self.working_dir = working_dir
         config_fpath = locate_config_file(self.working_dir)
         self.parser = RawConfigParser()
-        self.parser.read(config_fpath)
+        if config_fpath is not None:
+            self.parser.read(config_fpath)
 
     @property
     def cache_location(self):
-        cpath = self.parser.get("main", "cache_location")
+        try:
+            cpath = self.parser.get("main", "cache_location")
+        except NoSectionError:
+            return
         if not op.exists(cpath):
             open(cpath, "w").close()
         return cpath
@@ -53,7 +57,7 @@ class Configuration(object):
         try:
             remote = self.parser.get("main", "default_remote")
             return remote
-        except NoOptionError:
+        except (NoOptionError, NoSectionError):
             return "origin"
 
 
@@ -79,9 +83,11 @@ class PyTicks(object):
         self.cache = self._get_cache()
 
     def _get_cache(self):
-        with open(self.config.cache_location, "r") as fin:
-            cache = json.load(fin)
-        return cache
+        if self.config.cache_location is not None:
+            with open(self.config.cache_location, "r") as fin:
+                cache = json.load(fin)
+            return cache
+        return {}
 
     def encache(self, payload):
         issues = self.cache.get(self._get_remote_repo_name(), [])
