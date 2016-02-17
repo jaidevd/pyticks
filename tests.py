@@ -49,8 +49,6 @@ class TestPyticks(TestBase):
 
     def test_untracked(self):
         """Test if untracked files are found properly."""
-        from IPython.core.debugger import Tracer
-        Tracer()()
         self.assertEqual(len(self.repo.untracked_files), 1)
         self.assertIn("untracked_file.py", self.repo.untracked_files)
 
