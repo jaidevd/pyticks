@@ -11,13 +11,16 @@ PyTicks: automatically turn TODOs and FIXMEs into GitHub issues.
 '''
 
 import json
-from ConfigParser import RawConfigParser, NoOptionError, NoSectionError
+import six
 import subprocess
 import os.path as op
-
 from git import Repo
 from requests import session
 from requests.auth import HTTPBasicAuth
+if six.PY2:
+    from ConfigParser import RawConfigParser, NoOptionError, NoSectionError
+else:
+    from configparser import RawConfigParser, NoOptionError, NoSectionError
 
 
 URL = 'https://api.github.com/repos/{orgname}/{repo}/issues'
@@ -31,6 +34,7 @@ def locate_config_file(tld=None):
         tld = PyTicks._get_toplevel_directory()
     if op.exists(op.join(tld, ".pyticksrc")):
         return op.abspath(op.join(tld, ".pyticksrc"))
+    raise IOError("Configuration file not found.")
 
 
 class Configuration(object):
@@ -76,7 +80,7 @@ class PyTicks(object):
         if working_dir is None:
             self.working_dir = self._get_toplevel_directory()
         else:
-            self.working_dir = working_dir
+            self.woring_dir = working_dir
         self.repo = Repo(self.working_dir)
         if (auth is not None) and (None not in auth):
             self.username, self.password = auth
@@ -138,7 +142,7 @@ class PyTicks(object):
         :rtype: Str
         '''
         cmd = 'git rev-parse --show-toplevel'
-        return subprocess.check_output(cmd.split()).rstrip()
+        return subprocess.check_output(cmd.split()).rstrip().decode('utf-8')
 
     @property
     def files(self):
@@ -164,7 +168,7 @@ class PyTicks(object):
                 self.encache(payload)
             return response
         else:
-            print "Issue already filed. Skipping."
+            print("Issue already filed. Skipping.")
 
     def run(self):
         '''Parse all tracked files, get FIXMEs, create issues on GitHub.'''
@@ -189,7 +193,7 @@ class PyTicks(object):
         with open(filepath, 'r') as f:
             lines = [line.rstrip() for line in f.readlines()]
         anchors = []
-        for i in xrange(len(lines)):
+        for i in range(len(lines)):
             line = lines[i]
             if line.lstrip().startswith('# FIXME: '):
                 anchors.append(i)
@@ -233,7 +237,7 @@ class PyTicks(object):
 
 def main(auth):
     engine = PyTicks(auth)
-    print engine.run()
+    print(engine.run())
 
 
 if __name__ == '__main__':
