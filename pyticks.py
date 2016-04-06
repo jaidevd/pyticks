@@ -34,7 +34,6 @@ def locate_config_file(tld=None):
         tld = PyTicks._get_toplevel_directory()
     if op.exists(op.join(tld, ".pyticksrc")):
         return op.abspath(op.join(tld, ".pyticksrc"))
-    raise IOError("Configuration file not found.")
 
 
 class Configuration(object):
@@ -80,7 +79,7 @@ class PyTicks(object):
         if working_dir is None:
             self.working_dir = self._get_toplevel_directory()
         else:
-            self.woring_dir = working_dir
+            self.working_dir = working_dir
         self.repo = Repo(self.working_dir)
         if (auth is not None) and (None not in auth):
             self.username, self.password = auth

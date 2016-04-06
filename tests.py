@@ -12,13 +12,17 @@ import ast
 import os
 import os.path as op
 import shutil
+import six
 import unittest
 import git
 import json
 import pyticks
 import tempfile
-from ConfigParser import RawConfigParser
 import responses
+if six.PY2:
+    from ConfigParser import RawConfigParser
+elif six.PY3:
+    from configparser import RawConfigParser
 
 
 class TestBase(unittest.TestCase):
@@ -27,6 +31,8 @@ class TestBase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if six.PY3:
+            cls.assertItemsEqual = cls.assertSequenceEqual
         cls.testrepo_location = op.join(op.abspath(op.dirname(__file__)),
                                         "testdata", "testrepo")
 
