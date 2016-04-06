@@ -1,6 +1,7 @@
 gitpython
 requests
 docopt
+six
 # Testing
 coverage
 coveralls
