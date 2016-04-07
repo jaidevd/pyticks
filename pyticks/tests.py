@@ -158,7 +158,7 @@ class TestPyticks(TestBase):
     def test_get_toplevel_directory(self):
         """Test if the valid top level directory """
         self.assertEqual(self.engine._get_toplevel_directory(),
-                         op.abspath(op.dirname(__file__)))
+                         op.abspath(op.join(op.dirname(__file__), "..")))
 
     def test_source_files(self):
         """Test if the tracked source files are identified by pyticks."""

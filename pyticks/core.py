@@ -6,10 +6,6 @@
 #
 # Distributed under terms of the MIT license.
 
-'''
-PyTicks: automatically turn TODOs and FIXMEs into GitHub issues.
-'''
-
 import json
 import six
 import subprocess
@@ -234,10 +230,10 @@ class PyTicks(object):
                 return rname
 
 
-def main(auth):
+def worker(auth):
     engine = PyTicks(auth)
     print(engine.run())
 
 
 if __name__ == '__main__':
-    main()
+    worker()

@@ -2,9 +2,13 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2015 jaidev <jaidev@newton>
+# Cube26 product code
 #
-# Distributed under terms of the MIT license.
+# (C) Copyright 2015 Cube26 Software Pvt Ltd
+# All right reserved.
+#
+# This file is confidential and NOT open source.  Do not distribute.
+#
 
 """pyticks
 
@@ -19,11 +23,11 @@ Options:
 """
 
 from docopt import docopt
-from pyticks import pyticks
+from pyticks import worker
 
 
 def main():
     arguments = docopt(__doc__, version="pyticks v0.0.1")
     username = arguments.get("--username")
     password = arguments.get("--password")
-    pyticks.main((username, password))
+    worker((username, password))

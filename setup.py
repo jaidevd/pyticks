@@ -7,7 +7,7 @@ setup(
     author='Jaidev Deshpande',
     author_email='deshpande.jaidev@gmail.com',
     entry_points={
-        'console_scripts': ['pyticks = pyticks_cli:main'],
+        'console_scripts': ['pyticks = pyticks.cli:main'],
                },
-    packages=find_packages(),
+    packages=find_packages()
 )
