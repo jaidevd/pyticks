@@ -19,7 +19,7 @@ Options:
 """
 
 from docopt import docopt
-import pyticks
+from pyticks import pyticks
 
 
 def main():
