@@ -163,7 +163,9 @@ class PyTicks(object):
                 self.encache(payload)
             return response
         else:
-            print("Issue already filed. Skipping.")
+            print("The following issue has already been filed: {}".format(payload))
+            print("Please remove the comment if it has been resolved.")
+            print("Please clear the cache if it needs to be refiled.")
 
     def run(self):
         '''Parse all tracked files, get FIXMEs, create issues on GitHub.'''
